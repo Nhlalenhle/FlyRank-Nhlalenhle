@@ -5,6 +5,9 @@ data/**
 !data/raw/
 !data/raw/content_refresh_anonymized.csv
 
+# Block this committed ranking CSV and any other dataset-like outputs
+paper/assets/ranked_recommendations_top25.csv
+
 # Never commit bulk dataset dumps or archives
 *.parquet
 *.zip
