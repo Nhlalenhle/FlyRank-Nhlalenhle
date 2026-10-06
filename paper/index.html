@@ -1,15 +1,94 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Google Search Ranking &amp; Discoverability Capstone</title>
-<style>body{font-family:system-ui,-apple-system,sans-serif;max-width:900px;margin:40px auto;padding:0 20px;line-height:1.65;color:#202124}h1,h2{line-height:1.2}code{background:#f1f3f4;padding:2px 4px}</style></head>
-<body><h1>Google Search Ranking &amp; Discoverability Capstone</h1>
-<h2>Abstract</h2><p><b>Question:</b> Can observed page-level search and content signals rank pages by refresh-review priority? <b>Method:</b> a transparent model is evaluated against a simple baseline on the same holdout. <b>Result:</b> the notebook computes held-out ranking metrics from the FlyRank dataset. <b>Action:</b> scores become a ranked editorial review queue with reason codes. <b>Framing:</b> this is decision support, not causal proof or a reconstruction of Google's ranking system.</p>
-<h2>1. Introduction / Problem statement</h2><p>Editorial teams need a repeatable way to decide which pages deserve refresh review first when capacity is limited.</p>
-<h2>2. Data</h2><p>The analysis uses an anonymized FlyRank search/content dataset. The unit of analysis is one page-level observation. Public outputs exclude client names, domains, private URLs, queries, credentials and raw exports.</p>
-<h2>3. Methodology</h2><p>The target proxy is observed downward trend. Identifier-like and high-cardinality fields are excluded. A transparent logistic model is compared with a simple impressions-based baseline using the same stratified holdout.</p>
-<h2>4. Results</h2><p>Run <code>work/notebooks/capstone.ipynb</code> to generate the model-vs-baseline metrics, ROC/PR charts and ranked recommendations from the actual dataset.</p>
-<h2>5. Limitations</h2><p>The analysis does not prove causality, prove that refreshing a page will recover traffic, or reproduce Google's ranking algorithm. It is editorial decision support.</p>
-<h2>6. Ranked recommendations</h2><p>The notebook produces a ranked queue with priority tiers and reason codes so recommendations remain auditable.</p>
-<h2>7. Reproducibility</h2><p>Notebook: <code>work/notebooks/capstone.ipynb</code>. Generated assets belong in <code>paper/assets/</code>.</p>
-<h2>8. Acknowledgments &amp; data credit</h2><p>Built using FlyRank ML internship materials. <a href="https://flyrank.ai">FlyRank</a>.</p>
-</body></html>
+<style>
+body{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.65;max-width:1050px;margin:0 auto;padding:40px 22px;color:#18252b;background:#fff}
+h1{font-size:2.3rem;line-height:1.15;margin-bottom:.4rem} h2{margin-top:2.3rem;border-bottom:1px solid #ddd;padding-bottom:.35rem}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:24px 0}
+.card{border:1px solid #ddd;border-radius:10px;padding:16px;background:#fafafa}.big{font-size:1.8rem;font-weight:700}
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.94rem}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f3f5f5}
+figure{margin:22px 0}figure img{max-width:100%;height:auto;border:1px solid #ddd;border-radius:8px}figcaption{font-size:.9rem;color:#58636a;margin-top:5px}
+code{background:#f2f4f4;padding:2px 5px;border-radius:4px} .note{border-left:4px solid #426B69;padding:10px 14px;background:#f6f9f8}
+.small{color:#58636a;font-size:.92rem}
+</style>
+</head>
+<body>
+<header>
+<h1>Google Search Ranking &amp; Discoverability Capstone</h1>
+<p><strong>Lane:</strong> Refresh / Content Opportunity Scoring</p>
+<div class="note"><strong>Research question:</strong> Can observed search visibility, engagement, freshness, and content signals rank pages by refresh-review priority better than a transparent baseline rule?</div>
+</header>
+
+<h2>Abstract</h2>
+<p>Pages lose visibility for many reasons, so editorial teams need a repeatable way to decide what to review first. This capstone evaluates a content-refresh scoring workflow on an anonymized 30,000-page starter release, using observed decline as a proxy target and a client-holdout validation design. Logistic regression, decision tree, and random forest models were compared with a transparent baseline rule, with Precision@50 as the primary ranking metric. The selected random forest reached Precision@50 of <strong>0.740</strong> versus <strong>0.240</strong> for the baseline, while ROC AUC was 0.750 versus 0.627. The output is a ranked editorial review queue and decision-support artifact, not a causal claim about refreshes or Google's ranking algorithm.</p>
+
+<h2>1. Introduction / Problem statement</h2>
+<p>The operational problem is prioritization: manually inspecting every page is expensive, while a simple threshold rule can miss interactions among visibility, freshness, engagement, and content signals. The ML task is therefore ranking/scoring pages for review. The action supported by the output is an ordered editorial queue.</p>
+
+<h2>2. Data</h2>
+<p>The repository's reference pipeline reports 30,000 anonymized content-page rows, of which 16,262 (54.2%) carry the observed declining label. The public-safe analysis excludes client names, domains, URLs, titles, and search queries. One row represents one existing content page.</p>
+<table><tr><th>Element</th><th>Definition</th></tr>
+<tr><td>Unit</td><td>Existing content page</td></tr>
+<tr><td>Proxy target</td><td>Observed declining trend</td></tr>
+<tr><td>Validation</td><td>Client-holdout split</td></tr>
+<tr><td>Primary metric</td><td>Precision@50</td></tr>
+<tr><td>Public artifacts</td><td>Model report, ranked queue preview, SVG charts</td></tr></table>
+
+<h2>3. Methodology</h2>
+<p>The reference pipeline compares logistic regression, decision tree, and random forest models. A transparent hand-written refresh rule is the baseline. Model selection uses Precision@50 on the same client-holdout validation design. The final queue combines model probability with the baseline score and attaches reason codes for editorial interpretation.</p>
+<p>Leakage and safety controls include removing identifier-like fields from predictive use and keeping client/page identity out of the public paper. Feature importance is interpreted as directional association within this release, not as causal effect.</p>
+
+<h2>4. Results</h2>
+<div class="kpi">
+<div class="card"><div class="small">Rows scored</div><div class="big">30,000</div></div>
+<div class="card"><div class="small">Best model</div><div class="big">Random forest</div></div>
+<div class="card"><div class="small">Precision@50</div><div class="big">0.740</div></div>
+<div class="card"><div class="small">Baseline Precision@50</div><div class="big">0.240</div></div>
+</div>
+<table><tr><th>Model</th><th>ROC AUC</th><th>Average precision</th><th>Precision@50</th><th>Recall</th><th>F1</th></tr>
+<tr><td>Decision tree</td><td>0.742</td><td>0.575</td><td>0.540</td><td>0.716</td><td>0.634</td></tr>
+<tr><td>Logistic regression</td><td>0.700</td><td>0.522</td><td>0.400</td><td>0.567</td><td>0.566</td></tr>
+<tr><td><strong>Random forest</strong></td><td><strong>0.750</strong></td><td><strong>0.618</strong></td><td><strong>0.740</strong></td><td><strong>0.744</strong></td><td><strong>0.640</strong></td></tr>
+<tr><td>Baseline rule</td><td>0.627</td><td>0.468</td><td>0.240</td><td>—</td><td>—</td></tr></table>
+<figure><img src="assets/model_vs_baseline.svg" alt="Precision at 50 model versus baseline"><figcaption>Primary ranking metric: model versus transparent baseline.</figcaption></figure>
+<figure><img src="../outputs/charts/top_feature_importance.svg" alt="Top model features"><figcaption>Directional feature importance from the reference pipeline.</figcaption></figure>
+<figure><img src="../outputs/charts/action_mix.svg" alt="Suggested action mix"><figcaption>Recommended action mix across the scored queue.</figcaption></figure>
+
+<h2>5. Limitations &amp; honest framing</h2>
+<ul>
+<li>The target is an observed-decline proxy, not a business outcome or a Google ranking label.</li>
+<li>The study is observational. It does not prove that refreshing content causes traffic, clicks, or ranking recovery.</li>
+<li>The model does not reproduce or reverse-engineer Google's ranking system.</li>
+<li>Results can vary with data refreshes, library versions, and split composition.</li>
+<li>The ranked queue is decision support; editors should verify context before acting.</li>
+</ul>
+
+<h2>6. Ranked recommendations</h2>
+<p>Start review at the top of the queue, especially high-confidence pages with visible demand and decline risk. Use CTR-review reason codes for pages with meaningful impressions and weak CTR signals, engagement-review reason codes for pages with visible sessions and weaker engagement signals, and monitor lower-confidence items until new evidence arrives.</p>
+<table><tr><th>Rank</th><th>Content ID</th><th>Score</th><th>Model probability</th><th>Action</th><th>Trend</th></tr>
+<tr><td>1</td><td>content_1f080331fa2b</td><td>81.64</td><td>0.782</td><td>refresh_and_review_ctr</td><td>down</td></tr>
+<tr><td>2</td><td>content_6aa43079fb0c</td><td>81.45</td><td>0.788</td><td>refresh_and_review_ctr</td><td>down</td></tr>
+<tr><td>3</td><td>content_d6570c51c9bd</td><td>81.43</td><td>0.847</td><td>refresh_and_review_ctr</td><td>down</td></tr>
+<tr><td>4</td><td>content_72e800a9c214</td><td>81.03</td><td>0.774</td><td>refresh_and_review_ctr</td><td>down</td></tr>
+<tr><td>5</td><td>content_e04eb9549989</td><td>80.87</td><td>0.815</td><td>refresh_and_review_ctr</td><td>down</td></tr>
+<tr><td>6</td><td>content_b69288c5e701</td><td>80.75</td><td>0.796</td><td>refresh_and_review_ctr</td><td>down</td></tr>
+<tr><td>7</td><td>content_9b6df29f7889</td><td>80.63</td><td>0.846</td><td>refresh_and_review_ctr</td><td>down</td></tr>
+<tr><td>8</td><td>content_bb6ebb5ec8c8</td><td>80.37</td><td>0.835</td><td>refresh_and_review_ctr</td><td>down</td></tr>
+<tr><td>9</td><td>content_4d76cdb3387b</td><td>80.36</td><td>0.843</td><td>refresh_and_review_ctr</td><td>down</td></tr>
+<tr><td>10</td><td>content_b4f35d640b1c</td><td>80.32</td><td>0.844</td><td>refresh</td><td>down</td></tr>
+</table>
+<p class="small">The complete public-safe top-25 table is stored at <code>assets/ranked_recommendations_top25.csv</code>.</p>
+
+<h2>7. Reproducibility</h2>
+<p>Run <code>python scripts/run_all.py</code> from the repository root after restoring the bundled anonymized CSV if it is absent locally. The capstone notebook is <code>work/notebooks/capstone.ipynb</code>. The pipeline writes the model report, ranked queue, summary JSON, and SVG charts under <code>outputs/</code>.</p>
+
+<h2>8. Acknowledgments &amp; data credit</h2>
+<p>This work was completed for the FlyRank ML Internship using the anonymized starter release supplied for the program. Data use and publication are constrained to the public-safe rules of the internship repository.</p>
+<p><a href="https://flyrank.ai">FlyRank</a></p>
+
+<p class="small">Repository artifacts: <code>outputs/model_report.md</code>, <code>outputs/refresh_queue_sample.csv</code>, <code>paper/assets/model_vs_baseline.svg</code>, and <code>paper/assets/ranked_recommendations_top25.csv</code>.</p>
+</body>
+</html>
